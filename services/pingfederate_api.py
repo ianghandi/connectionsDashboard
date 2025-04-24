@@ -2,7 +2,6 @@ import requests
 import urllib3
 from config import PINGFEDERATE_SERVERS
 
-# Suppress SSL warnings in development
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 headers = {"Content-Type": "application/json"}
@@ -15,13 +14,31 @@ def get_auth_headers(env):
 
 def get_saml_connections(env, verify_ssl=True):
     auth, base_url = get_auth_headers(env)
-    url = f"{base_url}/pf-admin-api/v1/idp/sp-connections"
-    return requests.get(url, auth=auth, headers=headers, verify=verify_ssl).json().get('items', [])
+    url = f"{base_url}/pf-admin-api/v1/idp/spConnections"
+    print(f"[DEBUG] Fetching SAML connections from: {url}")
+    response = requests.get(url, auth=auth, headers=headers, verify=verify_ssl)
+    print(f"[DEBUG] Response status: {response.status_code}")
+    try:
+        json_data = response.json()
+        print(f"[DEBUG] Response JSON (truncated): {str(json_data)[:300]}")
+    except Exception as e:
+        print(f"[ERROR] Failed to parse SAML response JSON: {e}")
+        return []
+    return json_data.get("items", [])
 
 def get_oauth_clients(env, verify_ssl=True):
     auth, base_url = get_auth_headers(env)
     url = f"{base_url}/pf-admin-api/v1/oauth/clients"
-    return requests.get(url, auth=auth, headers=headers, verify=verify_ssl).json().get("items", [])
+    print(f"[DEBUG] Fetching OAuth clients from: {url}")
+    response = requests.get(url, auth=auth, headers=headers, verify=verify_ssl)
+    print(f"[DEBUG] Response status: {response.status_code}")
+    try:
+        json_data = response.json()
+        print(f"[DEBUG] Response JSON (truncated): {str(json_data)[:300]}")
+    except Exception as e:
+        print(f"[ERROR] Failed to parse OAuth response JSON: {e}")
+        return []
+    return json_data.get("items", [])
 
 def get_datastore_name_by_id(env, id, verify_ssl=True):
     if not id:
