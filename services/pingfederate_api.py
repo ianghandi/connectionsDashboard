@@ -4,7 +4,10 @@ from config import PINGFEDERATE_SERVERS
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-headers = {"Content-Type": "application/json"}
+headers = {
+    "Content-Type": "application/json",
+    "X-XSRF-Header": "PingFederate"
+}
 
 def get_auth_headers(env):
     env_config = PINGFEDERATE_SERVERS.get(env)
