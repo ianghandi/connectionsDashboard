@@ -13,6 +13,7 @@ cert_cache = {}
 datastore_cache = {}
 atm_cache = {}
 oidc_cache = {}
+preloaded_envs = set()
 
 def get_auth(env):
     config = PINGFEDERATE_SERVERS.get(env)
@@ -21,6 +22,10 @@ def get_auth(env):
     return (config["username"], config["password"]), config["base_url"]
 
 def preload_caches(env):
+    if env in preloaded_envs:
+        return
+    preloaded_envs.add(env)
+
     auth, base_url = get_auth(env)
 
     def fetch_all(endpoint):
