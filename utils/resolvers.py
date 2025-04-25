@@ -22,7 +22,7 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
         ), "")
         print(f"[DEBUG] Resolved datastore ID: {ds_id or '[None]'}")
 
-        # 🛠 Correct extraction of issuanceCriteria.expressionCriteria.expression
+        # 🛠 Correct extraction of issuanceCriteria.expression
         issuance_expression = ""
         try:
             expr_criteria = conn.get("issuanceCriteria", {}).get("expressionCriteria", [])
