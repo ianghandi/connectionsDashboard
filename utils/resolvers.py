@@ -10,6 +10,7 @@ from utils.resolver_cache import (
 def resolve_connection_fields(env, conn, verify_ssl=True):
     preload_caches(env)
     try:
+        print(f"[DEBUG] Resolving connection with keys: {list(conn.keys())}")
         return {
             "appName": conn.get("name", "Unknown App"),
             "appID": conn.get("contactInfo", {}).get("phone", ""),
@@ -27,7 +28,7 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
     except Exception as e:
         print(f"[ERROR] Exception inside resolve_connection_fields: {e}")
         return {
-            "appName": "ERROR",
+            "appName": f"Error: {e}",
             "appID": "",
             "entityID": "",
             "active": "No",
@@ -41,21 +42,34 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
             "certificateName": ""
         }
 
-
 def extract_application_id(description):
     match = re.search(r'\bAD\d{8}\b', description or "")
     return match.group(0) if match else None
 
-def resolve_oauth_client_fields(env, client, verify_ssl=False):
+def resolve_oauth_client_fields(env, client, verify_ssl=True):
     preload_caches(env)
-    return {
-        "clientID": client.get("clientId", ""),
-        "name": client.get("name", "Unknown Client"),
-        "status": "ACTIVE" if client.get("enabled") else "INACTIVE",
-        "grantTypes": client.get("grantTypes", []),
-        "redirectURIs": client.get("redirectUris", []),
-        "allowedScopes": client.get("allowedScopes", []),
-        "accessTokenManager": get_access_token_manager_name_cached(env, client.get("accessTokenManagerRef", {}).get("id", "")),
-        "oidcPolicy": get_oidc_policy_name_cached(env, client.get("openIdConnectPolicyRef", {}).get("id", "")),
-        "applicationID": extract_application_id(client.get("description", ""))
-    }
+    try:
+        return {
+            "clientID": client.get("clientId", ""),
+            "name": client.get("name", "Unknown Client"),
+            "status": "ACTIVE" if client.get("enabled") else "INACTIVE",
+            "grantTypes": client.get("grantTypes", []),
+            "redirectURIs": client.get("redirectUris", []),
+            "allowedScopes": client.get("allowedScopes", []),
+            "accessTokenManager": get_access_token_manager_name_cached(env, client.get("accessTokenManagerRef", {}).get("id", "")),
+            "oidcPolicy": get_oidc_policy_name_cached(env, client.get("openIdConnectPolicyRef", {}).get("id", "")),
+            "applicationID": extract_application_id(client.get("description", ""))
+        }
+    except Exception as e:
+        print(f"[ERROR] Exception inside resolve_oauth_client_fields: {e}")
+        return {
+            "clientID": "",
+            "name": f"Error: {e}",
+            "status": "INACTIVE",
+            "grantTypes": [],
+            "redirectURIs": [],
+            "allowedScopes": [],
+            "accessTokenManager": "",
+            "oidcPolicy": "",
+            "applicationID": ""
+        }
