@@ -1,59 +1,91 @@
 import requests
-from config import PINGFEDERATE_SERVERS
-import urllib3
+import re
+from config import PING_ENVIRONMENTS
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# Caching layer
+_CACHE = {}
 
-headers = {
-    "Content-Type": "application/json",
-    "X-XSRF-Header": "PingFederate"
-}
-
-cert_cache = {}
-datastore_cache = {}
-atm_cache = {}
-oidc_cache = {}
-preloaded_envs = set()
-
-def get_auth(env):
-    config = PINGFEDERATE_SERVERS.get(env)
-    if not config:
-        raise ValueError(f"Unknown environment: {env}")
-    return (config["username"], config["password"]), config["base_url"]
+def _get_env_config(env):
+    env_conf = PING_ENVIRONMENTS[env]
+    base_url = env_conf["base_url"]
+    headers = {
+        "Authorization": f"Basic {env_conf['auth']}",
+        "X-XSRF-Header": "PingFederate"
+    }
+    verify_ssl = env_conf.get("verify_ssl", True)
+    return base_url, headers, verify_ssl
 
 def preload_caches(env):
-    if env in preloaded_envs:
-        return
-    preloaded_envs.add(env)
+    base_url, headers, verify_ssl = _get_env_config(env)
 
-    auth, base_url = get_auth(env)
-
-    def fetch_all(endpoint):
-        url = f"{base_url}/pf-admin-api/v1/{endpoint}"
+    # Load Certificates
+    if f"{env}_certs" not in _CACHE:
         try:
-            res = requests.get(url, auth=auth, headers=headers, verify=False)
-            return res.json().get("items", [])
+            print(f"[DEBUG] Loading certs for {env}")
+            url = f"{base_url}/pf-admin-api/v1/keyPairs/signing"
+            resp = requests.get(url, headers=headers, verify=verify_ssl)
+            resp.raise_for_status()
+            items = resp.json().get("items", [])
+            _CACHE[f"{env}_certs"] = {item["id"]: item.get("name", item["id"]) for item in items}
         except Exception as e:
-            print(f"[ERROR] Failed to preload {endpoint}: {e}")
-            return []
+            print(f"[ERROR] Failed to load certs for {env}: {e}")
+            _CACHE[f"{env}_certs"] = {}
 
-    cert_cache[env] = {item.get("id"): item.get("name", item.get("id")) for item in fetch_all("keyPairs/signing") if item.get("id")}
-    datastore_cache[env] = {item.get("id"): item.get("name", item.get("id")) for item in fetch_all("dataStores") if item.get("id")}
-    atm_cache[env] = {item.get("id"): item.get("name", item.get("id")) for item in fetch_all("oauth/accessTokenManagers") if item.get("id")}
-    oidc_cache[env] = {item.get("id"): item.get("name", item.get("id")) for item in fetch_all("oauth/openIdConnect/policies") if item.get("id")}
+    # Load Access Token Managers
+    if f"{env}_atms" not in _CACHE:
+        try:
+            print(f"[DEBUG] Loading Access Token Managers for {env}")
+            url = f"{base_url}/pf-admin-api/v1/accessTokenManagers"
+            resp = requests.get(url, headers=headers, verify=verify_ssl)
+            resp.raise_for_status()
+            items = resp.json().get("items", [])
+            _CACHE[f"{env}_atms"] = {item["id"]: item.get("name", item["id"]) for item in items}
+        except Exception as e:
+            print(f"[ERROR] Failed to load ATMs for {env}: {e}")
+            _CACHE[f"{env}_atms"] = {}
 
-    print(f"[CACHE] Loaded certs: {len(cert_cache[env])}, datastores: {len(datastore_cache[env])}, ATMs: {len(atm_cache[env])}, OIDCs: {len(oidc_cache[env])}")
+    # Load OIDC Policies
+    if f"{env}_oidc_policies" not in _CACHE:
+        try:
+            print(f"[DEBUG] Loading OIDC Policies for {env}")
+            url = f"{base_url}/pf-admin-api/v1/oidcPolicies"
+            resp = requests.get(url, headers=headers, verify=verify_ssl)
+            resp.raise_for_status()
+            items = resp.json().get("items", [])
+            _CACHE[f"{env}_oidc_policies"] = {item["id"]: item.get("name", item["id"]) for item in items}
+        except Exception as e:
+            print(f"[ERROR] Failed to load OIDC Policies for {env}: {e}")
+            _CACHE[f"{env}_oidc_policies"] = {}
 
-def get_cert_name_cached(env, id):
-    return cert_cache.get(env, {}).get(id, id)
+    # Load Datastores
+    if f"{env}_datastores" not in _CACHE:
+        try:
+            print(f"[DEBUG] Loading Datastores for {env}")
+            url = f"{base_url}/pf-admin-api/v1/dataStores"
+            resp = requests.get(url, headers=headers, verify=verify_ssl)
+            resp.raise_for_status()
+            items = resp.json().get("items", [])
+            _CACHE[f"{env}_datastores"] = {item["id"]: item.get("name", item["id"]) for item in items}
+        except Exception as e:
+            print(f"[ERROR] Failed to load Datastores for {env}: {e}")
+            _CACHE[f"{env}_datastores"] = {}
 
-def get_datastore_name_cached(env, id):
-    name = datastore_cache.get(env, {}).get(id, id)
-    print(f"[DEBUG] Cache lookup for datastore ID {id} returned: {name}")
-    return name
+# --------------------
+# Getter helper functions
+# --------------------
 
-def get_access_token_manager_name_cached(env, id):
-    return atm_cache.get(env, {}).get(id, id)
+def get_cert_name_cached(env, cert_id):
+    preload_caches(env)
+    return _CACHE.get(f"{env}_certs", {}).get(cert_id, cert_id)
 
-def get_oidc_policy_name_cached(env, id):
-    return oidc_cache.get(env, {}).get(id, id)
+def get_access_token_manager_name_cached(env, atm_id):
+    preload_caches(env)
+    return _CACHE.get(f"{env}_atms", {}).get(atm_id, atm_id)
+
+def get_oidc_policy_name_cached(env, policy_id):
+    preload_caches(env)
+    return _CACHE.get(f"{env}_oidc_policies", {}).get(policy_id, policy_id)
+
+def get_datastore_name_cached(env, datastore_id):
+    preload_caches(env)
+    return _CACHE.get(f"{env}_datastores", {}).get(datastore_id, datastore_id)
