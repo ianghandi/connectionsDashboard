@@ -153,14 +153,14 @@ const MyIntegrations = () => {
             ))}
           </div>
         </div>
-        <div className="flex flex-wrap gap-4 items-center mb-6 justify-between">
+        <div className="flex flex-wrap gap-4 items-center mb-6 justify-between sticky top-0 z-20 bg-gray-50 dark:bg-gray-900 py-4 rounded-xl">
           <div className="flex gap-4">
-            <select value={environment} onChange={(e) => setEnvironment(e.target.value)} className="border p-2 rounded">
+            <select value={environment} onChange={(e) => setEnvironment(e.target.value)} className="border p-2 rounded bg-white dark:bg-gray-800 text-black dark:text-white">
               <option value="dev">Dev</option>
               <option value="qa">QA</option>
               <option value="prod">Prod</option>
             </select>
-            <select value={connectionType} onChange={(e) => setConnectionType(e.target.value)} className="border p-2 rounded">
+            <select value={connectionType} onChange={(e) => setConnectionType(e.target.value)} className="border p-2 rounded bg-white dark:bg-gray-800 text-black dark:text-white">
               <option value="saml">SAML</option>
               <option value="oauth">OAuth</option>
             </select>
