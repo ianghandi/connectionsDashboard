@@ -10,16 +10,19 @@ from utils.resolver_cache import (
 def resolve_connection_fields(env, conn, verify_ssl=True):
     preload_caches(env)
 
-    try:
-        # Extract datastore ID from authenticationPolicyContractAssertionMappings
         try:
+            # Grab all attribute sources across mappings
+            all_sources = [
+                src for mapping in conn.get("authenticationPolicyContractAssertionMappings", [])
+                for src in mapping.get("attributeSources", [])
+            ]
+            # Pull the first valid dataStoreRef.id
             ds_id = next((
                 src.get("dataStoreRef", {}).get("id")
-                for mapping in conn.get("authenticationPolicyContractAssertionMappings", [])
-                for src in mapping.get("attributeSources", [])
+                for src in all_sources
                 if src.get("dataStoreRef", {}).get("id")
             ), "")
-            print(f"[DEBUG] Resolved datastore ID: {ds_id}")
+            print(f"[DEBUG] Resolved datastore ID: {ds_id or '[None]'}")
         except Exception as e:
             print(f"[ERROR] Failed to extract datastore ID: {e}")
             ds_id = ""
