@@ -9,7 +9,6 @@ headers = {
     "X-XSRF-Header": "PingFederate"
 }
 
-# Cache dictionaries
 cert_cache = {}
 datastore_cache = {}
 atm_cache = {}
@@ -33,10 +32,10 @@ def preload_caches(env):
             print(f"[ERROR] Failed to preload {endpoint}: {e}")
             return []
 
-    cert_cache[env] = {item["id"]: item["name"] for item in fetch_all("keyPairs/signing")}
-    datastore_cache[env] = {item["id"]: item["name"] for item in fetch_all("dataStores")}
-    atm_cache[env] = {item["id"]: item["name"] for item in fetch_all("oauth/accessTokenManagers")}
-    oidc_cache[env] = {item["id"]: item["name"] for item in fetch_all("oauth/openIdConnect/policies")}
+    cert_cache[env] = {item.get("id"): item.get("name", item.get("id")) for item in fetch_all("keyPairs/signing") if item.get("id")}
+    datastore_cache[env] = {item.get("id"): item.get("name", item.get("id")) for item in fetch_all("dataStores") if item.get("id")}
+    atm_cache[env] = {item.get("id"): item.get("name", item.get("id")) for item in fetch_all("oauth/accessTokenManagers") if item.get("id")}
+    oidc_cache[env] = {item.get("id"): item.get("name", item.get("id")) for item in fetch_all("oauth/openIdConnect/policies") if item.get("id")}
 
     print(f"[CACHE] Loaded certs: {len(cert_cache[env])}, datastores: {len(datastore_cache[env])}, ATMs: {len(atm_cache[env])}, OIDCs: {len(oidc_cache[env])}")
 
