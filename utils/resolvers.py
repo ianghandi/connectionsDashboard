@@ -24,10 +24,10 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
             "dataStore": get_datastore_name_cached(
                 env,
                 next((
-                    src.get("id")
+                    src.get("dataStoreRef", {}).get("id")
                     for src in conn.get("authenticationPolicyContractAssertionMappings", {})
                                .get("attributeSources", [])
-                    if src.get("id")
+                    if src.get("dataStoreRef", {}).get("id")
                 ), "")
             ),
             "issuanceCriteria": conn.get("issuanceCriteria", {}),
