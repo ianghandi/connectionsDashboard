@@ -3,58 +3,59 @@ from utils.resolver_cache import (
     preload_caches,
     get_cert_name_cached,
     get_access_token_manager_name_cached,
-    get_oidc_policy_name_cached,
+    get_oidc_policy_name_cached
 )
 
 def resolve_connection_fields(conn, certs_cache, datastores_cache):
     try:
-        # Basic fields
         app_name = conn.get("name", "")
         app_id = conn.get("contactInfo", {}).get("phone", "")
         entity_id = conn.get("entityId", "")
         active = "Yes" if conn.get("active", False) else "No"
 
-        # Browser SSO section
         sp_browser_sso = conn.get("spBrowserSso", {})
         idp_url = sp_browser_sso.get("ssoApplicationEndpoint", "")
         base_url = idp_url.split("/")[2] if idp_url else ""
+
         protocol = sp_browser_sso.get("protocol", "")
         enabled_profiles = sp_browser_sso.get("enabledProfiles", [])
         incoming_bindings = sp_browser_sso.get("incomingBindings", [])
 
-        # Certificate name resolution
+        # Certificate name
         signing_ref_id = conn.get("credentials", {}).get("signingSettings", {}).get("signingKeyPairRef", {}).get("id", "")
         certificate_name = certs_cache.get(signing_ref_id, signing_ref_id) if signing_ref_id else ""
 
-        # DataStore name resolution from attributeSources
+        # Data store ID from attributeSources
         data_store_id = ""
         mappings = sp_browser_sso.get("authenticationPolicyContractAssertionMappings", [])
         for mapping in mappings:
             sources = mapping.get("attributeSources", [])
             for src in sources:
-                ref_id = src.get("dataStoreRef", {}).get("id")
-                if ref_id:
-                    data_store_id = ref_id
+                ref = src.get("dataStoreRef", {}).get("id")
+                if ref:
+                    data_store_id = ref
                     break
             if data_store_id:
                 break
 
         data_store_name = datastores_cache.get(data_store_id, data_store_id) if data_store_id else ""
 
-        # Issuance Criteria Expression
+        # Issuance criteria expression
         issuance_expression = ""
         for mapping in conn.get("authenticationPolicyContractAssertionMappings", []):
-            issuance = mapping.get("issuanceCriteria", {})
-            expression_criteria = issuance.get("expressionCriteria", [])
+            expression_criteria = mapping.get("issuanceCriteria", {}).get("expressionCriteria", [])
             if isinstance(expression_criteria, list) and expression_criteria:
                 issuance_expression = expression_criteria[0].get("expression", "")
                 break
 
         # SSO Service Endpoint URL
         sso_service_url = ""
-        sso_endpoints = sp_browser_sso.get("ssoServiceEndpoints", [])
-        if isinstance(sso_endpoints, list) and sso_endpoints:
-            sso_service_url = sso_endpoints[0].get("url", "")
+        try:
+            endpoints = sp_browser_sso.get("ssoServiceEndpoints", [])
+            if endpoints:
+                sso_service_url = endpoints[0].get("url", "")
+        except Exception as e:
+            print(f"[ERROR] Failed to extract SSO Service URL: {e}")
 
         return {
             "appName": app_name,
