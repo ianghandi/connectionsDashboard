@@ -48,7 +48,9 @@ def get_cert_name_cached(env, id):
     return cert_cache.get(env, {}).get(id, id)
 
 def get_datastore_name_cached(env, id):
-    return datastore_cache.get(env, {}).get(id, id)
+    name = datastore_cache.get(env, {}).get(id, id)
+    print(f"[DEBUG] Cache lookup for datastore ID {id} returned: {name}")
+    return name
 
 def get_access_token_manager_name_cached(env, id):
     return atm_cache.get(env, {}).get(id, id)
