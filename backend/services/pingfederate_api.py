@@ -1,6 +1,6 @@
 import requests
 import urllib3
-from config import PINGFEDERATE_SERVERS
+from config import PINGFEDERATE_ENVIRONMENTS
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -10,7 +10,7 @@ headers = {
 }
 
 def get_auth_headers(env):
-    env_config = PINGFEDERATE_SERVERS.get(env)
+    env_config = PINGFEDERATE_ENVIRONMENTS.get(env)
     if not env_config:
         raise ValueError(f"Invalid environment: {env}")
     return (env_config["username"], env_config["password"]), env_config["base_url"]

@@ -1,5 +1,5 @@
 
-PINGFEDERATE_SERVERS = {
+PINGFEDERATE_ENVIRONMENTS = {
     "dev": {
         "base_url": "https://ping-dev.example.com",
         "username": "admin-dev",

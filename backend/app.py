@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from services.pingfederate_api import get_saml_connections, get_oauth_clients
 from utils.resolvers import resolve_connection_fields, resolve_oauth_client_fields
+from utils.resolver_cache import preload_caches
 
 app = Flask(__name__)
 CORS(app)
