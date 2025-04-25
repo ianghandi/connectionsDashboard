@@ -7,7 +7,7 @@ from utils.resolver_cache import (
     get_oidc_policy_name_cached
 )
 
-def resolve_connection_fields(env, conn, verify_ssl=True):
+def resolve_connection_fields(env, conn, verify_ssl=False):
     preload_caches(env)
     return {
         "appName": conn.get("name", "Unknown App"),
@@ -28,7 +28,7 @@ def extract_application_id(description):
     match = re.search(r'\bAD\d{8}\b', description or "")
     return match.group(0) if match else None
 
-def resolve_oauth_client_fields(env, client, verify_ssl=True):
+def resolve_oauth_client_fields(env, client, verify_ssl=False):
     preload_caches(env)
     return {
         "clientID": client.get("clientId", ""),
