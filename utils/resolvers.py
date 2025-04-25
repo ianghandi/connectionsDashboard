@@ -25,8 +25,8 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
                 env,
                 next((
                     src.get("dataStoreRef", {}).get("id")
-                    for src in conn.get("authenticationPolicyContractAssertionMappings", {})
-                               .get("attributeSources", [])
+                    for mapping in conn.get("authenticationPolicyContractAssertionMappings", [])
+                    for src in mapping.get("attributeSources", [])
                     if src.get("dataStoreRef", {}).get("id")
                 ), "")
             ),
