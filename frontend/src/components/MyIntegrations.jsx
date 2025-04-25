@@ -33,7 +33,15 @@ const MyIntegrations = () => {
 
       setAllConnections(data);
       setFilteredConnections(data);
-      setVisibleColumns(Object.keys(data[0] || {}));
+      const orderedCols = Object.keys(data[0] || {});
+if (orderedCols.includes("appName")) {
+  orderedCols.splice(orderedCols.indexOf("appName"), 1);
+  orderedCols.unshift("appName");
+} else if (orderedCols.includes("name")) {
+  orderedCols.splice(orderedCols.indexOf("name"), 1);
+  orderedCols.unshift("name");
+}
+setVisibleColumns(orderedCols);
       setColumnFilters({});
     };
 
