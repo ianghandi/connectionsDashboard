@@ -51,9 +51,9 @@ const MyIntegrations = () => {
 
   const exportToExcel = () => {
     const data = filteredConnections.map(conn => {
-      const filtered = {};
-      visibleColumns.forEach(col => filtered[col] = conn[col]);
-      return filtered;
+      const row = {};
+      visibleColumns.forEach(col => row[col] = conn[col]);
+      return row;
     });
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
@@ -75,41 +75,21 @@ const MyIntegrations = () => {
   };
 
   return (
-    <motion.div
-      className="p-6 dark:bg-gray-900 bg-gray-50 rounded-xl shadow-xl min-h-screen text-gray-900 dark:text-gray-100"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
+    <motion.div className="p-6 dark:bg-gray-900 bg-gray-50 rounded-xl shadow-xl min-h-screen text-gray-900 dark:text-gray-100">
+      {/* Controls */}
       <div className="flex flex-wrap gap-4 items-center mb-6 justify-between">
         <div className="flex gap-4">
-          <select
-            className="border border-gray-300 dark:border-gray-700 p-2 rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800"
-            value={environment}
-            onChange={(e) => setEnvironment(e.target.value)}
-          >
+          <select value={environment} onChange={(e) => setEnvironment(e.target.value)} className="border p-2 rounded">
             <option value="dev">Dev</option>
             <option value="qa">QA</option>
             <option value="prod">Prod</option>
           </select>
-
-          <select
-            className="border border-gray-300 dark:border-gray-700 p-2 rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800"
-            value={connectionType}
-            onChange={(e) => setConnectionType(e.target.value)}
-          >
+          <select value={connectionType} onChange={(e) => setConnectionType(e.target.value)} className="border p-2 rounded">
             <option value="saml">SAML</option>
             <option value="oauth">OAuth</option>
           </select>
-
-          <button
-            onClick={exportToExcel}
-            className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold px-4 py-2 rounded-md shadow-md transition-all duration-200"
-          >
-            Export Visible Rows
-          </button>
+          <button onClick={exportToExcel} className="bg-blue-600 text-white px-4 py-2 rounded">Export</button>
         </div>
-
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Dark Mode</span>
           <label className="relative inline-flex items-center cursor-pointer">
@@ -119,23 +99,20 @@ const MyIntegrations = () => {
         </div>
       </div>
 
+      {/* Column toggles */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold mb-2">Select Columns:</h2>
         <div className="flex flex-wrap gap-4">
           {(Object.keys(allConnections[0] || {})).map((col) => (
             <label key={col} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                className="accent-blue-600"
-                checked={visibleColumns.includes(col)}
-                onChange={() => handleColumnToggle(col)}
-              />
+              <input type="checkbox" className="accent-blue-600" checked={visibleColumns.includes(col)} onChange={() => handleColumnToggle(col)} />
               <span className="text-sm font-medium">{col}</span>
             </label>
           ))}
         </div>
       </div>
 
+      {/* Column filters */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold mb-2">Filter Columns:</h2>
         <div className="grid md:grid-cols-3 gap-4">
@@ -154,6 +131,7 @@ const MyIntegrations = () => {
         </div>
       </div>
 
+      {/* Table */}
       {filteredConnections.length === 0 ? (
         <div className="text-center py-10 text-gray-500 dark:text-gray-400">
           No connections found or data could not be loaded.
@@ -179,7 +157,11 @@ const MyIntegrations = () => {
                 >
                   {visibleColumns.map((col) => (
                     <td key={col} className="px-4 py-2 border-b border-gray-200 dark:border-gray-600">
-                      {Array.isArray(conn[col]) ? conn[col].join(", ") : conn[col]}
+                      {Array.isArray(conn[col])
+                        ? conn[col].join(", ")
+                        : typeof conn[col] === "object" && conn[col] !== null
+                          ? JSON.stringify(conn[col])
+                          : conn[col]}
                     </td>
                   ))}
                 </motion.tr>
