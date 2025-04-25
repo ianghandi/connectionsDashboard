@@ -119,7 +119,27 @@ const MyIntegrations = () => {
   return (
     <DndProvider backend={HTML5Backend}>
       <motion.div className="p-6 dark:bg-gray-900 bg-gray-50 rounded-xl shadow-xl min-h-screen text-gray-900 dark:text-gray-100">
-        {/* Controls, Column Toggle, Column Filters stay the same */}
+        <div className="flex flex-wrap gap-4 items-center mb-6 justify-between">
+          <div className="flex gap-4">
+            <select value={environment} onChange={(e) => setEnvironment(e.target.value)} className="border p-2 rounded">
+              <option value="dev">Dev</option>
+              <option value="qa">QA</option>
+              <option value="prod">Prod</option>
+            </select>
+            <select value={connectionType} onChange={(e) => setConnectionType(e.target.value)} className="border p-2 rounded">
+              <option value="saml">SAML</option>
+              <option value="oauth">OAuth</option>
+            </select>
+            <button onClick={exportToExcel} className="bg-blue-600 text-white px-4 py-2 rounded">Export</button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Dark Mode</span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only peer" checked={isDarkMode} onChange={() => setIsDarkMode(!isDarkMode)} />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-400 dark:bg-gray-700 peer-checked:bg-blue-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+            </label>
+          </div>
+        </div>
 
         {filteredConnections.length === 0 ? (
           <div className="text-center py-10 text-gray-500 dark:text-gray-400">
