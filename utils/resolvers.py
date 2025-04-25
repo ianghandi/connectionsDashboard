@@ -7,22 +7,40 @@ from utils.resolver_cache import (
     get_oidc_policy_name_cached
 )
 
-def resolve_connection_fields(env, conn, verify_ssl=False):
+def resolve_connection_fields(env, conn, verify_ssl=True):
     preload_caches(env)
-    return {
-        "appName": conn.get("name", "Unknown App"),
-        "appID": conn.get("contactInfo", {}).get("phone", ""),
-        "entityID": conn.get("entityId", ""),
-        "active": "Yes" if conn.get("active") else "No",
-        "idpURL": conn.get("ssoService", {}).get("ssoApplicationEndpoint", ""),
-        "baseURL": conn.get("baseUrl", ""),
-        "protocol": conn.get("protocol", ""),
-        "enabledProfiles": conn.get("enabledProfiles", []),
-        "incomingBindings": conn.get("incomingBindings", []),
-        "dataStore": get_datastore_name_cached(env, conn.get("attributeMapping", {}).get("dataStoreRef", {}).get("id", "")),
-        "issuanceCriteria": conn.get("issuanceCriteria", {}),
-        "certificateName": get_cert_name_cached(env, conn.get("credentials", {}).get("signingSettings", {}).get("signingKeyPairRef", {}).get("id", ""))
-    }
+    try:
+        return {
+            "appName": conn.get("name", "Unknown App"),
+            "appID": conn.get("contactInfo", {}).get("phone", ""),
+            "entityID": conn.get("entityId", ""),
+            "active": "Yes" if conn.get("active") else "No",
+            "idpURL": conn.get("ssoService", {}).get("ssoApplicationEndpoint", ""),
+            "baseURL": conn.get("baseUrl", ""),
+            "protocol": conn.get("protocol", ""),
+            "enabledProfiles": conn.get("enabledProfiles", []),
+            "incomingBindings": conn.get("incomingBindings", []),
+            "dataStore": get_datastore_name_cached(env, conn.get("attributeMapping", {}).get("dataStoreRef", {}).get("id", "")),
+            "issuanceCriteria": conn.get("issuanceCriteria", {}),
+            "certificateName": get_cert_name_cached(env, conn.get("credentials", {}).get("signingSettings", {}).get("signingKeyPairRef", {}).get("id", ""))
+        }
+    except Exception as e:
+        print(f"[ERROR] Exception inside resolve_connection_fields: {e}")
+        return {
+            "appName": "ERROR",
+            "appID": "",
+            "entityID": "",
+            "active": "No",
+            "idpURL": "",
+            "baseURL": "",
+            "protocol": "",
+            "enabledProfiles": [],
+            "incomingBindings": [],
+            "dataStore": "",
+            "issuanceCriteria": {},
+            "certificateName": ""
+        }
+
 
 def extract_application_id(description):
     match = re.search(r'\bAD\d{8}\b', description or "")
