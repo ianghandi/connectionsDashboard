@@ -29,7 +29,7 @@ const DraggableColumn = ({ col, index, moveColumn }) => {
 };
 
 const MyIntegrations = () => {
-  const [environment, setEnvironment] = useState("dev");
+  const [environment, setEnvironment] = useState("");
   const [connectionType, setConnectionType] = useState("saml");
   const [allConnections, setAllConnections] = useState([]);
   const [filteredConnections, setFilteredConnections] = useState([]);
@@ -43,6 +43,7 @@ const MyIntegrations = () => {
   }, [isDarkMode]);
 
   useEffect(() => {
+    if (!environment || !connectionType) return;
     const fetchConnections = async () => {
       const res = await fetch(`/api/${connectionType}-connections?env=${environment}`);
       const data = await res.json();
@@ -122,6 +123,7 @@ const MyIntegrations = () => {
         <div className="flex flex-wrap gap-4 items-center mb-6 justify-between sticky top-0 z-20 bg-gray-50 dark:bg-gray-900 py-4 rounded-xl">
           <div className="flex gap-4">
             <select value={environment} onChange={(e) => setEnvironment(e.target.value)} className="border p-2 rounded bg-white dark:bg-gray-800 text-black dark:text-white">
+              <option value="" disabled>Select Environment</option>
               <option value="dev">Dev</option>
               <option value="qa">QA</option>
               <option value="prod">Prod</option>
