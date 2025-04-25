@@ -47,8 +47,6 @@ const MyIntegrations = () => {
       const res = await fetch(`/api/${connectionType}-connections?env=${environment}`);
       const data = await res.json();
 
-      console.log("[DEBUG] Fetched data:", data);
-
       if (!Array.isArray(data)) {
         console.error("❌ Expected array but got:", data);
         setAllConnections([]);
@@ -119,40 +117,8 @@ const MyIntegrations = () => {
   return (
     <DndProvider backend={HTML5Backend}>
       <motion.div className="p-6 dark:bg-gray-900 bg-gray-50 rounded-xl shadow-xl min-h-screen text-gray-900 dark:text-gray-100">
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-2">Select Columns:</h2>
-          <div className="flex flex-wrap gap-4">
-            {(Object.keys(allConnections[0] || {})).map((col) => (
-              <label key={col} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  className="accent-blue-600"
-                  checked={visibleColumns.includes(col)}
-                  onChange={() => handleColumnToggle(col)}
-                />
-                <span className="text-sm font-medium">{col}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-2">Filter Columns:</h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {visibleColumns.map((col) => (
-              <div key={col} className="flex flex-col">
-                <label className="text-sm font-medium mb-1">{col}</label>
-                <input
-                  type="text"
-                  className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-md p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  placeholder={`Filter ${col}`}
-                  value={columnFilters[col] || ""}
-                  onChange={(e) => handleFilterChange(col, e.target.value)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+        
+        {/* Sticky Controls */}
         <div className="flex flex-wrap gap-4 items-center mb-6 justify-between sticky top-0 z-20 bg-gray-50 dark:bg-gray-900 py-4 rounded-xl">
           <div className="flex gap-4">
             <select value={environment} onChange={(e) => setEnvironment(e.target.value)} className="border p-2 rounded bg-white dark:bg-gray-800 text-black dark:text-white">
@@ -175,6 +141,44 @@ const MyIntegrations = () => {
           </div>
         </div>
 
+        {/* Column Toggles */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-2">Select Columns:</h2>
+          <div className="flex flex-wrap gap-4">
+            {(Object.keys(allConnections[0] || {})).map((col) => (
+              <label key={col} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  className="accent-blue-600"
+                  checked={visibleColumns.includes(col)}
+                  onChange={() => handleColumnToggle(col)}
+                />
+                <span className="text-sm font-medium">{col}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Column Filters */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-2">Filter Columns:</h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            {visibleColumns.map((col) => (
+              <div key={col} className="flex flex-col">
+                <label className="text-sm font-medium mb-1">{col}</label>
+                <input
+                  type="text"
+                  className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-md p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  placeholder={`Filter ${col}`}
+                  value={columnFilters[col] || ""}
+                  onChange={(e) => handleFilterChange(col, e.target.value)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Data Table */}
         {filteredConnections.length === 0 ? (
           <div className="text-center py-10 text-gray-500 dark:text-gray-400">
             No connections found or data could not be loaded.
