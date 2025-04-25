@@ -21,7 +21,15 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
             "protocol": conn.get("protocol", ""),
             "enabledProfiles": conn.get("enabledProfiles", []),
             "incomingBindings": conn.get("incomingBindings", []),
-            "dataStore": get_datastore_name_cached(env, conn.get("attributeMapping", {}).get("dataStoreRef", {}).get("id", "")),
+            "dataStore": get_datastore_name_cached(
+                env,
+                next((
+                    src.get("id")
+                    for src in conn.get("authenticationPolicyContractAssertionMappings", {})
+                               .get("attributeSources", [])
+                    if src.get("id")
+                ), "")
+            ),
             "issuanceCriteria": conn.get("issuanceCriteria", {}),
             "certificateName": get_cert_name_cached(env, conn.get("credentials", {}).get("signingSettings", {}).get("signingKeyPairRef", {}).get("id", ""))
         }
