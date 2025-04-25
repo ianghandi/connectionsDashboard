@@ -27,11 +27,11 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
             "appID": conn.get("contactInfo", {}).get("phone", ""),
             "entityID": conn.get("entityId", ""),
             "active": "Yes" if conn.get("active") else "No",
-            "idpURL": conn.get("ssoService", {}).get("ssoApplicationEndpoint", ""),
+            "idpURL": conn.get("spBrowserSso", {}).get("ssoApplicationEndpoint", ""),  # ✅ fixed
             "baseURL": conn.get("baseUrl", ""),
-            "protocol": conn.get("spBrowserSso", {}).get("protocol", ""),  # ✅ Correct path
-            "enabledProfiles": conn.get("enabledProfiles", []),
-            "incomingBindings": conn.get("incomingBindings", []),
+            "protocol": conn.get("spBrowserSso", {}).get("protocol", ""),  # ✅ fixed
+            "enabledProfiles": conn.get("spBrowserSso", {}).get("enabledProfiles", []),
+            "incomingBindings": conn.get("spBrowserSso", {}).get("incomingBindings", []),  # ✅ fixed
             "dataStore": ds_id,
             "issuanceCriteria": conn.get("issuanceCriteria", {}),
             "certificateName": get_cert_name_cached(
