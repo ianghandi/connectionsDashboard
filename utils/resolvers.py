@@ -10,22 +10,19 @@ from utils.resolver_cache import (
 def resolve_connection_fields(env, conn, verify_ssl=True):
     preload_caches(env)
 
+    # Outer try for full function execution
     try:
         # Flatten all attributeSources across all mappings
-        try:
-            all_sources = [
-                src for mapping in conn.get("authenticationPolicyContractAssertionMappings", [])
-                for src in mapping.get("attributeSources", [])
-            ]
-            ds_id = next((
-                src.get("dataStoreRef", {}).get("id")
-                for src in all_sources
-                if src.get("dataStoreRef", {}).get("id")
-            ), "")
-            print(f"[DEBUG] Resolved datastore ID: {ds_id or '[None]'}")
-        except Exception as e:
-            print(f"[ERROR] Failed to extract datastore ID: {e}")
-            ds_id = ""
+        all_sources = [
+            src for mapping in conn.get("authenticationPolicyContractAssertionMappings", [])
+            for src in mapping.get("attributeSources", [])
+        ]
+        ds_id = next((
+            src.get("dataStoreRef", {}).get("id")
+            for src in all_sources
+            if src.get("dataStoreRef", {}).get("id")
+        ), "")
+        print(f"[DEBUG] Resolved datastore ID: {ds_id or '[None]'}")
 
         return {
             "appName": conn.get("name", "Unknown App"),
