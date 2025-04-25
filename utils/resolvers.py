@@ -10,13 +10,13 @@ from utils.resolver_cache import (
 def resolve_connection_fields(env, conn, verify_ssl=True):
     preload_caches(env)
 
+    try:
+        # Flatten all attributeSources across all mappings
         try:
-            # Grab all attribute sources across mappings
             all_sources = [
                 src for mapping in conn.get("authenticationPolicyContractAssertionMappings", [])
                 for src in mapping.get("attributeSources", [])
             ]
-            # Pull the first valid dataStoreRef.id
             ds_id = next((
                 src.get("dataStoreRef", {}).get("id")
                 for src in all_sources
@@ -65,7 +65,7 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
 def resolve_oauth_client_fields(env, client, verify_ssl=True):
     preload_caches(env)
 
-    # Extract App ID from description using regex
+    # Extract App ID from description using regex (e.g., AD00123456)
     desc = client.get("description", "")
     match = re.search(r"(AD\d+)", desc)
     app_id = match.group(1) if match else ""
@@ -78,6 +78,12 @@ def resolve_oauth_client_fields(env, client, verify_ssl=True):
         "grantTypes": client.get("grantTypes", []),
         "redirectURIs": client.get("redirectUris", []),
         "allowedScopes": client.get("restrictedScopes", []),
-        "accessTokenManager": get_access_token_manager_name_cached(env, client.get("accessTokenManagerRef", {}).get("id", "")),
-        "oidcPolicy": get_oidc_policy_name_cached(env, client.get("policyRef", {}).get("id", ""))
+        "accessTokenManager": get_access_token_manager_name_cached(
+            env,
+            client.get("accessTokenManagerRef", {}).get("id", "")
+        ),
+        "oidcPolicy": get_oidc_policy_name_cached(
+            env,
+            client.get("policyRef", {}).get("id", "")
+        )
     }
