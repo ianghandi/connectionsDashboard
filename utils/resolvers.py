@@ -22,6 +22,15 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
         ), "")
         print(f"[DEBUG] Resolved datastore ID: {ds_id or '[None]'}")
 
+        # 🛠 Correct extraction of issuanceCriteria.expressionCriteria.expression
+        issuance_expression = ""
+        try:
+            expr_criteria = conn.get("issuanceCriteria", {}).get("expressionCriteria", [])
+            if isinstance(expr_criteria, list) and expr_criteria:
+                issuance_expression = expr_criteria[0].get("expression", "")
+        except Exception as e:
+            print(f"[ERROR] Failed to extract issuance expression: {e}")
+
         return {
             "appName": conn.get("name", "Unknown App"),
             "appID": conn.get("contactInfo", {}).get("phone", ""),
@@ -33,7 +42,7 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
             "enabledProfiles": conn.get("spBrowserSso", {}).get("enabledProfiles", []),
             "incomingBindings": conn.get("spBrowserSso", {}).get("incomingBindings", []),
             "dataStore": ds_id,
-            "issuanceCriteria": conn.get("issuanceCriteria", {}).get("expressionCriteria", {}).get("expression", ""),  # ✅ fixed
+            "issuanceCriteria": issuance_expression,
             "certificateName": get_cert_name_cached(
                 env,
                 conn.get("credentials", {}).get("signingSettings", {}).get("signingKeyPairRef", {}).get("id", "")
@@ -60,7 +69,6 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
 def resolve_oauth_client_fields(env, client, verify_ssl=True):
     preload_caches(env)
 
-    # Extract App ID from description using regex (e.g., AD00123456)
     desc = client.get("description", "")
     match = re.search(r"(AD\d+)", desc)
     app_id = match.group(1) if match else ""
