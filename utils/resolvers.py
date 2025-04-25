@@ -27,13 +27,13 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
             "appID": conn.get("contactInfo", {}).get("phone", ""),
             "entityID": conn.get("entityId", ""),
             "active": "Yes" if conn.get("active") else "No",
-            "idpURL": conn.get("spBrowserSso", {}).get("ssoApplicationEndpoint", ""),  # ✅ fixed
+            "idpURL": conn.get("spBrowserSso", {}).get("ssoApplicationEndpoint", ""),
             "baseURL": conn.get("baseUrl", ""),
-            "protocol": conn.get("spBrowserSso", {}).get("protocol", ""),  # ✅ fixed
+            "protocol": conn.get("spBrowserSso", {}).get("protocol", ""),
             "enabledProfiles": conn.get("spBrowserSso", {}).get("enabledProfiles", []),
-            "incomingBindings": conn.get("spBrowserSso", {}).get("incomingBindings", []),  # ✅ fixed
+            "incomingBindings": conn.get("spBrowserSso", {}).get("incomingBindings", []),
             "dataStore": ds_id,
-            "issuanceCriteria": conn.get("issuanceCriteria", {}),
+            "issuanceCriteria": conn.get("issuanceCriteria", {}).get("expressionCriteria", {}).get("expression", ""),  # ✅ fixed
             "certificateName": get_cert_name_cached(
                 env,
                 conn.get("credentials", {}).get("signingSettings", {}).get("signingKeyPairRef", {}).get("id", "")
@@ -53,7 +53,7 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
             "enabledProfiles": [],
             "incomingBindings": [],
             "dataStore": "",
-            "issuanceCriteria": {},
+            "issuanceCriteria": "",
             "certificateName": ""
         }
 
