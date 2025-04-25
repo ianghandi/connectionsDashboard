@@ -29,7 +29,7 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
             "active": "Yes" if conn.get("active") else "No",
             "idpURL": conn.get("ssoService", {}).get("ssoApplicationEndpoint", ""),
             "baseURL": conn.get("baseUrl", ""),
-            "protocol": conn.get("protocol", ""),
+            "protocol": conn.get("spBrowserSso", {}).get("protocol", ""),  # ✅ Correct path
             "enabledProfiles": conn.get("enabledProfiles", []),
             "incomingBindings": conn.get("incomingBindings", []),
             "dataStore": ds_id,
