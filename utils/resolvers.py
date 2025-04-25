@@ -3,62 +3,50 @@ from utils.resolver_cache import (
     preload_caches,
     get_cert_name_cached,
     get_access_token_manager_name_cached,
-    get_oidc_policy_name_cached
+    get_oidc_policy_name_cached,
+    get_datastore_name_cached
 )
 
-def resolve_connection_fields(conn, certs_cache, datastores_cache):
+def resolve_saml_connection_fields(env, conn):
     try:
-        app_name = conn.get("name", "")
-        app_id = conn.get("contactInfo", {}).get("phone", "")
+        preload_caches(env)
+
+        name = conn.get("name", "")
         entity_id = conn.get("entityId", "")
         active = "Yes" if conn.get("active", False) else "No"
+        app_id = conn.get("contactInfo", {}).get("phone", "")
 
-        sp_browser_sso = conn.get("spBrowserSso", {})
-        idp_url = sp_browser_sso.get("ssoApplicationEndpoint", "")
-        base_url = idp_url.split("/")[2] if idp_url else ""
+        sp_sso = conn.get("spBrowserSso", {})
+        protocol = sp_sso.get("protocol", "")
+        enabled_profiles = sp_sso.get("enabledProfiles", [])
+        incoming_bindings = sp_sso.get("incomingBindings", [])
+        idp_url = sp_sso.get("ssoApplicationEndpoint", "")
+        sso_endpoints = sp_sso.get("ssoServiceEndpoints", [])
+        base_url = sso_endpoints[0].get("url", "") if sso_endpoints else ""
 
-        protocol = sp_browser_sso.get("protocol", "")
-        enabled_profiles = sp_browser_sso.get("enabledProfiles", [])
-        incoming_bindings = sp_browser_sso.get("incomingBindings", [])
+        issuance_criteria = ""
+        mappings = conn.get("spBrowserSso", {}).get("authenticationPolicyContractAssertionMappings", [])
+        if mappings:
+            criteria = mappings[0].get("issuanceCriteria", {})
+            expression_criteria = criteria.get("expressionCriteria", [])
+            if expression_criteria:
+                issuance_criteria = expression_criteria[0].get("expression", "")
+            elif criteria.get("conditionalCriteria"):
+                issuance_criteria = str(criteria["conditionalCriteria"])
 
-        # Certificate name
-        signing_ref_id = conn.get("credentials", {}).get("signingSettings", {}).get("signingKeyPairRef", {}).get("id", "")
-        certificate_name = certs_cache.get(signing_ref_id, signing_ref_id) if signing_ref_id else ""
+        datastore_id = ""
+        if mappings:
+            sources = mappings[0].get("attributeSources", [])
+            if sources:
+                ds_ref = sources[0].get("dataStoreRef", {}).get("id", "")
+                if ds_ref:
+                    datastore_id = get_datastore_name_cached(env, ds_ref)
 
-        # Data store ID from attributeSources
-        data_store_id = ""
-        mappings = sp_browser_sso.get("authenticationPolicyContractAssertionMappings", [])
-        for mapping in mappings:
-            sources = mapping.get("attributeSources", [])
-            for src in sources:
-                ref = src.get("dataStoreRef", {}).get("id")
-                if ref:
-                    data_store_id = ref
-                    break
-            if data_store_id:
-                break
-
-        data_store_name = datastores_cache.get(data_store_id, data_store_id) if data_store_id else ""
-
-        # Issuance criteria expression
-        issuance_expression = ""
-        for mapping in conn.get("authenticationPolicyContractAssertionMappings", []):
-            expression_criteria = mapping.get("issuanceCriteria", {}).get("expressionCriteria", [])
-            if isinstance(expression_criteria, list) and expression_criteria:
-                issuance_expression = expression_criteria[0].get("expression", "")
-                break
-
-        # SSO Service Endpoint URL
-        sso_service_url = ""
-        try:
-            endpoints = sp_browser_sso.get("ssoServiceEndpoints", [])
-            if endpoints:
-                sso_service_url = endpoints[0].get("url", "")
-        except Exception as e:
-            print(f"[ERROR] Failed to extract SSO Service URL: {e}")
+        cert_id = conn.get("credentials", {}).get("signingSettings", {}).get("signingKeyPairRef", {}).get("id", "")
+        cert_name = get_cert_name_cached(env, cert_id)
 
         return {
-            "appName": app_name,
+            "appName": name,
             "appID": app_id,
             "entityID": entity_id,
             "active": active,
@@ -67,14 +55,13 @@ def resolve_connection_fields(conn, certs_cache, datastores_cache):
             "protocol": protocol,
             "enabledProfiles": enabled_profiles,
             "incomingBindings": incoming_bindings,
-            "dataStore": data_store_name,
-            "issuanceCriteria": issuance_expression,
-            "certificateName": certificate_name,
-            "ssoServiceEndpointURL": sso_service_url
+            "dataStore": datastore_id,
+            "issuanceCriteria": issuance_criteria,
+            "certificateName": cert_name
         }
 
     except Exception as e:
-        print(f"[ERROR] Exception inside resolve_connection_fields: {e}")
+        print(f"[ERROR] Exception inside resolve_saml_connection_fields: {e}")
         return {
             "appName": "ERROR",
             "appID": "",
@@ -87,10 +74,8 @@ def resolve_connection_fields(conn, certs_cache, datastores_cache):
             "incomingBindings": [],
             "dataStore": "",
             "issuanceCriteria": "",
-            "certificateName": "",
-            "ssoServiceEndpointURL": ""
+            "certificateName": ""
         }
-
 
 def resolve_oauth_client_fields(env, client, verify_ssl=True):
     preload_caches(env)
