@@ -9,8 +9,21 @@ from utils.resolver_cache import (
 
 def resolve_connection_fields(env, conn, verify_ssl=True):
     preload_caches(env)
+
     try:
-        print(f"[DEBUG] Resolving connection with keys: {list(conn.keys())}")
+        # Extract datastore ID from authenticationPolicyContractAssertionMappings
+        try:
+            ds_id = next((
+                src.get("dataStoreRef", {}).get("id")
+                for mapping in conn.get("authenticationPolicyContractAssertionMappings", [])
+                for src in mapping.get("attributeSources", [])
+                if src.get("dataStoreRef", {}).get("id")
+            ), "")
+            print(f"[DEBUG] Resolved datastore ID: {ds_id}")
+        except Exception as e:
+            print(f"[ERROR] Failed to extract datastore ID: {e}")
+            ds_id = ""
+
         return {
             "appName": conn.get("name", "Unknown App"),
             "appID": conn.get("contactInfo", {}).get("phone", ""),
@@ -21,22 +34,18 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
             "protocol": conn.get("protocol", ""),
             "enabledProfiles": conn.get("enabledProfiles", []),
             "incomingBindings": conn.get("incomingBindings", []),
-            "dataStore": get_datastore_name_cached(
-                env,
-                next((
-                    src.get("dataStoreRef", {}).get("id")
-                    for mapping in conn.get("authenticationPolicyContractAssertionMappings", [])
-                    for src in mapping.get("attributeSources", [])
-                    if src.get("dataStoreRef", {}).get("id")
-                ), "")
-            ),
+            "dataStore": get_datastore_name_cached(env, ds_id),
             "issuanceCriteria": conn.get("issuanceCriteria", {}),
-            "certificateName": get_cert_name_cached(env, conn.get("credentials", {}).get("signingSettings", {}).get("signingKeyPairRef", {}).get("id", ""))
+            "certificateName": get_cert_name_cached(
+                env,
+                conn.get("credentials", {}).get("signingSettings", {}).get("signingKeyPairRef", {}).get("id", "")
+            )
         }
+
     except Exception as e:
         print(f"[ERROR] Exception inside resolve_connection_fields: {e}")
         return {
-            "appName": f"Error: {e}",
+            "appName": "ERROR",
             "appID": "",
             "entityID": "",
             "active": "No",
@@ -50,34 +59,22 @@ def resolve_connection_fields(env, conn, verify_ssl=True):
             "certificateName": ""
         }
 
-def extract_application_id(description):
-    match = re.search(r'\bAD\d{8}\b', description or "")
-    return match.group(0) if match else None
-
 def resolve_oauth_client_fields(env, client, verify_ssl=True):
     preload_caches(env)
-    try:
-        return {
-            "clientID": client.get("clientId", ""),
-            "name": client.get("name", "Unknown Client"),
-            "status": "ACTIVE" if client.get("enabled") else "INACTIVE",
-            "grantTypes": client.get("grantTypes", []),
-            "redirectURIs": client.get("redirectUris", []),
-            "allowedScopes": client.get("allowedScopes", []),
-            "accessTokenManager": get_access_token_manager_name_cached(env, client.get("accessTokenManagerRef", {}).get("id", "")),
-            "oidcPolicy": get_oidc_policy_name_cached(env, client.get("openIdConnectPolicyRef", {}).get("id", "")),
-            "applicationID": extract_application_id(client.get("description", ""))
-        }
-    except Exception as e:
-        print(f"[ERROR] Exception inside resolve_oauth_client_fields: {e}")
-        return {
-            "clientID": "",
-            "name": f"Error: {e}",
-            "status": "INACTIVE",
-            "grantTypes": [],
-            "redirectURIs": [],
-            "allowedScopes": [],
-            "accessTokenManager": "",
-            "oidcPolicy": "",
-            "applicationID": ""
-        }
+
+    # Extract App ID from description using regex
+    desc = client.get("description", "")
+    match = re.search(r"(AD\d+)", desc)
+    app_id = match.group(1) if match else ""
+
+    return {
+        "clientID": client.get("clientId", ""),
+        "appName": client.get("name", "Unknown App"),
+        "appID": app_id,
+        "status": client.get("enabled", False),
+        "grantTypes": client.get("grantTypes", []),
+        "redirectURIs": client.get("redirectUris", []),
+        "allowedScopes": client.get("restrictedScopes", []),
+        "accessTokenManager": get_access_token_manager_name_cached(env, client.get("accessTokenManagerRef", {}).get("id", "")),
+        "oidcPolicy": get_oidc_policy_name_cached(env, client.get("policyRef", {}).get("id", ""))
+    }
