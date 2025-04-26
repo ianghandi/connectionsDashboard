@@ -5,7 +5,7 @@ from config import PINGFEDERATE_ENVIRONMENTS
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 headers = {
-    "Content-Type": "application/json",
+    "Content-Type": "application/x-www-form-urlencoded",
     "X-XSRF-Header": "PingFederate"
 }
 
